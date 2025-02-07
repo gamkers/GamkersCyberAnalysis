@@ -195,35 +195,45 @@ Code to analyze:
 {code_chunk}
 
 Provide a comprehensive analysis with a brief summary of findings and details for each category. Return your analysis in this exact JSON structure:
-{
+{{
     "summary": ["Brief overview of key findings and potential security implications"],
-    "sections": {
-        "code_obfuscation_techniques": {
+    "sections": {{
+        "code_obfuscation_techniques": {{
             "findings": [],
             "description": "Brief explanation of identified obfuscation techniques and their implications"
-        },
-        "suspicious_api_calls": {
+        }},
+        "suspicious_api_calls": {{
             "findings": [],
             "description": "Overview of concerning API calls and their potential security impact"
-        },
-        "anti_analysis_mechanisms": {
+        }},
+        "anti_analysis_mechanisms": {{
             "findings": [],
             "description": "Summary of detected anti-analysis features and their significance"
-        },
-        "network_communication_patterns": {
+        }},
+        "network_communication_patterns": {{
             "findings": [],
             "description": "Analysis of network-related code patterns and security concerns"
-        },
-        "file_system_operations": {
+        }},
+        "file_system_operations": {{
             "findings": [],
             "description": "Evaluation of file system interactions and associated risks"
-        },
-        "potential_payload_analysis": {
+        }},
+        "potential_payload_analysis": {{
             "findings": [],
             "description": "Assessment of potential malicious payloads and their characteristics"
-        }
-    }
-}"""
+        }}
+    }}
+}}
+
+Requirements:
+1. Ensure each field is populated with meaningful content
+2. Include a clear summary of overall findings
+3. Provide a brief description for each section
+4. List specific findings as bullet points in the findings arrays
+5. Use "None identified" in findings array if no indicators are found
+6. Keep descriptions concise and focused on security implications
+
+Your response should be ONLY the JSON object with no additional text."""
         )
         
         self.analysis_chain = LLMChain(
