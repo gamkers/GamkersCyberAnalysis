@@ -1,5 +1,5 @@
 section[data-testid='stSidebar'] {
-    background-color: #111;
+    background-color: black;
     flex-shrink: unset !important;
     
 }
@@ -19,7 +19,7 @@ section[data-testid='stSidebar'] {
         z-index: 1;
         top: 0;
         left: 0;
-        background-color: #111;
+        background-color: black;
         overflow-x: hidden;
         transition: 0.5s ease;
         padding-top: 60px;
