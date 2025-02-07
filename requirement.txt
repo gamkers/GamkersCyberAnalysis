@@ -1,0 +1,6 @@
+streamlit
+st-on-hover-tabs
+streamlit-lottie
+langchain
+langchain-groq
+python-docx
