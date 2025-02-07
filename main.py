@@ -420,7 +420,7 @@ def main():
             iconName=['code', 'chat', 'info'],
             styles={
                         'navtab': {
-                            'background-color': 'black',
+                            'background-color': '#9D4EDD',
                             'color': '#9D4EDD',
                             'font-size': '16px',
                             'transition': '.3s',
