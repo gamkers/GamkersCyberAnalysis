@@ -420,7 +420,7 @@ def main():
             iconName=['code', 'chat', 'info'],
             styles={
                         'navtab': {
-                            'background-color': '#9D4EDD',
+                            'background-color': 'black',
                             'color': '#9D4EDD',
                             'font-size': '16px',
                             'transition': '.3s',
@@ -428,7 +428,7 @@ def main():
                             'text-transform': 'uppercase'
                         },
                         'tabOptionsStyle': {
-                            ':hover': {'color': '#1A1A1A', 'background-color': '#00FF00'}
+                            ':hover': {'color': '#1A1A1A', 'background-color': 'black'}
                         },
                         'iconStyle': {
                             'position': 'fixed',
