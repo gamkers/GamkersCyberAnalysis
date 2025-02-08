@@ -4,6 +4,11 @@ section[data-testid='stSidebar'] {
     
 }
 
+footer {
+        visibility: hidden;
+    }
+    */
+
 @media(hover:hover) and (min-width: 600px) and (max-width: 769px){
 
     header[data-testid="stHeader"] {
