@@ -3,9 +3,8 @@ section[data-testid='stSidebar'] {
     flex-shrink: unset !important;
 }
 
-section[data-testid='stBottom'] {
-    background-color: black;
-    flex-shrink: unset !important;
+section[data-testid='appCreatorAvatar'] {
+    display: none;
 }
 
 /* Phone screens: up to 600px */
