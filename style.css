@@ -3,7 +3,7 @@ section[data-testid='stSidebar'] {
     flex-shrink: unset !important;
 }
 
-section[data-testid='stBottomBlockContainer'] {
+section[data-testid='stBottom'] {
     background-color: black;
     flex-shrink: unset !important;
 }
