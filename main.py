@@ -13,7 +13,7 @@ import os
 from streamlit_lottie import st_lottie
 hide_menu_style = """
         <style>
-        #MainMenu {visibility: hidden;}
+        MainMenu {visibility: hidden;}
         footer {visibility: hidden; }
         </style>
         """
