@@ -3,6 +3,11 @@ section[data-testid='stSidebar'] {
     flex-shrink: unset !important;
 }
 
+section[data-testid='stBottomBlockContainer'] {
+    background-color: black;
+    flex-shrink: unset !important;
+}
+
 /* Phone screens: up to 600px */
 @media (max-width: 600px) {
     header[data-testid="stHeader"] {
