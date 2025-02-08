@@ -387,7 +387,7 @@ Your response should be ONLY the JSON object with no additional text."""
         return report_filename
 
     def get_chat_response(self, user_input: str) -> str:
-        return self.conversation.predict(input=user_input+" Explain in 4 lines")
+        return self.conversation.predict(input=user_input+"Response should be short and crisp")
 
 def display_analysis_results(analysis: Dict):
     st.header("Executive Summary")
