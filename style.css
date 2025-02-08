@@ -39,6 +39,11 @@ section[data-testid='stSidebar'] {
     }
 
 }
+@media (max-width: 600px) {
+    header[data-testid="stHeader"] {
+        display: none;
+    }
+}
 
 @media(hover: hover) and (min-width: 769px){
 
