@@ -4,3 +4,4 @@ streamlit-lottie
 langchain
 langchain-groq
 python-docx
+re
