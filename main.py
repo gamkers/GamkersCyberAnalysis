@@ -573,7 +573,7 @@ def about_section():
 class SecurityAnalysisApp:
     def __init__(self, groq_api_key: str):
         self.chat_model = ChatGroq(groq_api_key=groq_api_key,
-                                   model_name="qwen-qwq-32b",
+                                   model_name="openai/gpt-oss-120b",
                                    temperature=0.7, max_tokens=None)
         self._build_chains()
 
