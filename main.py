@@ -12,7 +12,7 @@ from docx import Document
 #  STREAMLIT PAGE CONFIG
 # ──────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="HEXSTRIKE SOC",
+    page_title="SentinelX SOC",
     page_icon="⬡",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -190,7 +190,7 @@ def soc_header():
     <div style="display:flex;align-items:center;gap:16px;padding:12px 0 20px;border-bottom:1px solid #0d2137;margin-bottom:20px;">
       <div style="font-family:'Orbitron',sans-serif;font-size:26px;font-weight:900;
                   color:#00d4ff;letter-spacing:4px;text-shadow:0 0 20px rgba(0,212,255,0.5);">
-        ⬡ HEXSTRIKE
+        ⬡ SentinelX
       </div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#4a7a99;
                   border-left:1px solid #0d2137;padding-left:16px;line-height:1.8;">
@@ -814,11 +814,11 @@ class BehavioralHeuristics:
 # ══════════════════════════════════════════════════════════════════════════════
 #  MAIN APP CLASS
 # ══════════════════════════════════════════════════════════════════════════════
-class HexStrikeApp:
+class SentinelXApp:
     def __init__(self, groq_api_key: str):
         self.chat_model = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name="qwen-qwq-32b",
+            model_name="llama-3.3-70b-versatile",
             temperature=0.7, max_tokens=None
         )
         self._build_chains()
@@ -1078,7 +1078,7 @@ Return ONLY valid JSON:
         if not beh: return "No behavioral signatures detected."
         return "\n".join([f"{v['label']}: {','.join(v['matched'][:6])}" for v in beh.values()])
 
-    def create_report(self, results: Dict, title: str = "HEXSTRIKE Security Report") -> str:
+    def create_report(self, results: Dict, title: str = "SentinelX Security Report") -> str:
         doc = Document()
         doc.add_heading(title, 0)
         tl = results.get("threat_level","UNKNOWN")
@@ -1108,14 +1108,106 @@ Return ONLY valid JSON:
             for f in content.get("findings",[]):
                 if f not in ("Error","None identified"):
                     doc.add_paragraph(f"• {f}")
-        fname = f"hexstrike_report_{os.getpid()}.docx"
+        fname = f"SentinelX_report_{os.getpid()}.docx"
         doc.save(fname); return fname
 
-    def get_chat_response(self, user_input: str) -> str:
-        response = self.conversation.predict(
-            input=user_input + "\n\nBe concise. You are a SOC analyst assistant."
-        )
+    def get_chat_response(self, user_input: str, analysis_context: str = "") -> str:
+        if analysis_context:
+            full_input = (
+                f"You are a SOC analyst and cybersecurity teacher helping a student understand "
+                f"a malware analysis result. Here is the full analysis that was just performed:\n\n"
+                f"{analysis_context}\n\n"
+                f"---\n"
+                f"Student's question: {user_input}\n\n"
+                f"Answer clearly and educationally. Refer to specific findings from the analysis above "
+                f"where relevant. Explain WHY something is dangerous, not just what it is. Be concise."
+            )
+        else:
+            full_input = (
+                f"You are a SOC analyst and cybersecurity teacher. "
+                f"No analysis has been run yet — answer this general question concisely:\n\n{user_input}"
+            )
+        response = self.conversation.predict(input=full_input)
         return re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL).strip()
+
+    @staticmethod
+    def build_analysis_context(results: Dict) -> str:
+        """Flatten the analysis results into a readable text block for the LLM."""
+        lines = []
+        lines.append(f"THREAT LEVEL: {results.get('threat_level','UNKNOWN')}")
+        lines.append(f"VERDICT: {results.get('verdict','N/A')}")
+        lines.append(f"MALWARE FAMILY: {results.get('malware_family','Unknown')}")
+        lines.append(f"CONFIDENCE: {results.get('confidence','LOW')}")
+        lines.append("")
+
+        summary = results.get("summary", [])
+        if summary:
+            lines.append("SUMMARY:")
+            for s in summary:
+                lines.append(f"  - {s}")
+            lines.append("")
+
+        # YARA hits
+        yara = results.get("yara_hits", [])
+        if yara:
+            lines.append("YARA RULE MATCHES:")
+            for h in yara:
+                lines.append(f"  [{h['severity']}] {h['rule']}: {h['description']}")
+                lines.append(f"    Matched strings: {', '.join(h['matched_strings'][:6])}")
+            lines.append("")
+
+        # Injection techniques
+        inj = results.get("injection", {})
+        if inj:
+            lines.append(f"INJECTION RISK SCORE: {inj.get('risk_score', 0)}")
+            techs = inj.get("detected_techniques", [])
+            if techs:
+                lines.append("DETECTED INJECTION TECHNIQUES:")
+                for t in techs:
+                    lines.append(f"  [{t['severity']}][confidence:{t['confidence']}] {t['technique']}")
+                    lines.append(f"    APIs: {', '.join(t['matched_apis'])}")
+                    lines.append(f"    Description: {t['description']}")
+            evasion = inj.get("evasion_capabilities", {})
+            if evasion:
+                lines.append("EVASION CAPABILITIES:")
+                for cat, apis in evasion.items():
+                    lines.append(f"  {cat}: {', '.join(apis)}")
+            lines.append("")
+
+        # Forensics
+        forensics = results.get("forensics", {})
+        if forensics:
+            lines.append(f"ENTROPY: {forensics.get('overall_entropy','?')} — {forensics.get('entropy_verdict','')}")
+            lines.append(f"MD5: {forensics.get('md5','N/A')}")
+            lines.append(f"SHA256: {forensics.get('sha256','N/A')}")
+            if forensics.get("shellcode_signatures"):
+                lines.append(f"SHELLCODE SIGNATURES: {', '.join(forensics['shellcode_signatures'])}")
+            if forensics.get("packer_signatures"):
+                lines.append(f"PACKERS DETECTED: {', '.join(forensics['packer_signatures'])}")
+            if forensics.get("c2_indicators"):
+                lines.append(f"C2 IOCs: {', '.join(forensics['c2_indicators'])}")
+            if forensics.get("encoder_artifacts"):
+                lines.append(f"ENCODER ARTIFACTS: {', '.join(forensics['encoder_artifacts'])}")
+            lines.append("")
+
+        # Behavioral
+        behavioral = results.get("behavioral", {})
+        if behavioral:
+            lines.append("BEHAVIORAL PROFILE:")
+            for v in behavioral.values():
+                lines.append(f"  {v['label']}: {', '.join(v['matched'][:8])}")
+            lines.append("")
+
+        # AI sections
+        for sec, content in results.get("sections", {}).items():
+            findings = [f for f in content.get("findings", []) if f not in ("Error", "None identified")]
+            if findings:
+                lines.append(f"{sec.replace('_',' ').upper()}:")
+                for f in findings[:6]:
+                    lines.append(f"  - {f}")
+                lines.append("")
+
+        return "\n".join(lines)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1332,7 +1424,7 @@ def build_sidebar():
         st.markdown("""
         <div style="font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;
                     color:#00d4ff;letter-spacing:3px;padding:8px 0 4px;
-                    text-shadow:0 0 12px rgba(0,212,255,0.4);">⬡ HEXSTRIKE</div>
+                    text-shadow:0 0 12px rgba(0,212,255,0.4);">⬡ SentinelX</div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a3a52;
                     letter-spacing:2px;margin-bottom:16px;">MALWARE ANALYSIS PLATFORM</div>
         """, unsafe_allow_html=True)
@@ -1387,7 +1479,7 @@ def about_page():
     <div style="max-width:800px;">
       <div style="font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;
                   color:#00d4ff;letter-spacing:4px;text-shadow:0 0 30px rgba(0,212,255,0.4);
-                  margin-bottom:8px;">HEXSTRIKE SOC</div>
+                  margin-bottom:8px;">SentinelX SOC</div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#4a7a99;
                   margin-bottom:32px;">ADVANCED MALWARE ANALYSIS PLATFORM — GAMKERS EDITION</div>
     </div>
@@ -1434,7 +1526,7 @@ def main():
         return
 
     if "app" not in st.session_state or st.session_state.get("_api_key") != groq_api_key:
-        st.session_state.app      = HexStrikeApp(groq_api_key)
+        st.session_state.app      = SentinelXApp(groq_api_key)
         st.session_state.messages = []
         st.session_state._api_key = groq_api_key
 
@@ -1447,6 +1539,8 @@ def main():
             if st.button("⬡  RUN ANALYSIS", key="analyze_pasted") and code_input:
                 with st.spinner(""):
                     results = st.session_state.app.analyze_code(code_input)
+                    st.session_state.last_analysis = results
+                    st.session_state.last_analysis_name = "Pasted Code"
                     display_analysis_results(results)
                     fname = st.session_state.app.create_report(results)
                     with open(fname,"rb") as f:
@@ -1459,6 +1553,8 @@ def main():
             if st.button("⬡  ANALYZE SOURCE", key="analyze_src") and uf:
                 with st.spinner(""):
                     results = st.session_state.app.analyze_code(uf.read().decode(errors='replace'))
+                    st.session_state.last_analysis = results
+                    st.session_state.last_analysis_name = uf.name
                     display_analysis_results(results)
                     fname = st.session_state.app.create_report(results)
                     with open(fname,"rb") as f:
@@ -1480,6 +1576,8 @@ def main():
                             st.text_area("", value="\n".join(preview[:300]), height=200,
                                          disabled=True, label_visibility="collapsed")
                         results = st.session_state.app.analyze_binary(binary_data)
+                        st.session_state.last_analysis = results
+                        st.session_state.last_analysis_name = ub.name
                         display_analysis_results(results)
                         fname = st.session_state.app.create_report(results, title=f"Binary Analysis — {ub.name}")
                         with open(fname,"rb") as f:
@@ -1496,15 +1594,80 @@ def main():
           SOC INTELLIGENCE ASSISTANT — Ask about malware, injection techniques, IOC analysis, TTPs
         </div>
         """, unsafe_allow_html=True)
+
+        # ── analysis context banner ──────────────────────────────────────────
+        last = st.session_state.get("last_analysis")
+        last_name = st.session_state.get("last_analysis_name", "Unknown")
+        analysis_context = ""
+        if last:
+            tl = last.get("threat_level","UNKNOWN")
+            tl_color = {"CRITICAL":"#ff3c6e","HIGH":"#ff6b35","MEDIUM":"#ffaa00","LOW":"#00ff88","CLEAN":"#00ff88"}.get(tl,"#4a7a99")
+            st.markdown(f"""
+            <div style="background:#050a0f;border:1px solid #0d2137;border-left:3px solid {tl_color};
+                        padding:10px 14px;margin-bottom:12px;font-family:'Share Tech Mono',monospace;font-size:11px;">
+              <span style="color:{tl_color};">◈ ANALYSIS CONTEXT LOADED</span>
+              <span style="color:#4a7a99;margin:0 8px;">|</span>
+              <span style="color:#c8e6f5;">{last_name}</span>
+              <span style="color:#4a7a99;margin:0 8px;">|</span>
+              <span style="color:{tl_color};">{tl}</span>
+              <span style="color:#4a7a99;margin-left:16px;font-size:10px;">
+                Ask anything about this analysis — the AI has full context of all findings
+              </span>
+            </div>
+            """, unsafe_allow_html=True)
+            analysis_context = SentinelXApp.build_analysis_context(last)
+
+            col_clear, _ = st.columns([1, 5])
+            with col_clear:
+                if st.button("✕  CLEAR CONTEXT", key="clear_ctx"):
+                    st.session_state.last_analysis = None
+                    st.session_state.last_analysis_name = None
+                    st.session_state.messages = []
+                    st.rerun()
+        else:
+            st.markdown("""
+            <div style="background:#050a0f;border:1px solid #0d2137;border-left:3px solid #1a3a52;
+                        padding:10px 14px;margin-bottom:12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#4a7a99;">
+              ◇ NO ANALYSIS LOADED — Run an analysis in the Analyzer tab first,
+              then come back here to ask questions about the results.
+              General cybersecurity questions still work.
+            </div>
+            """, unsafe_allow_html=True)
+
+        # ── suggested questions when context is loaded ───────────────────────
+        if last and not st.session_state.messages:
+            st.markdown("<div style='font-family:Share Tech Mono,monospace;font-size:10px;color:#4a7a99;margin-bottom:6px;'>▸ SUGGESTED QUESTIONS</div>", unsafe_allow_html=True)
+            suggestions = [
+                "Why is this file considered malicious?",
+                "Explain the injection technique detected in simple terms",
+                "What does high entropy mean in this file?",
+                "How would this malware persist on a system?",
+                "What are the C2 indicators and what do they mean?",
+                "How can I detect this malware on a live system?",
+            ]
+            cols = st.columns(3)
+            for i, suggestion in enumerate(suggestions):
+                with cols[i % 3]:
+                    if st.button(suggestion, key=f"sug_{i}", use_container_width=True):
+                        st.session_state.messages.append({"role":"user","content":suggestion})
+                        with st.spinner(""):
+                            resp = st.session_state.app.get_chat_response(suggestion, analysis_context)
+                            st.session_state.messages.append({"role":"assistant","content":resp})
+                        st.rerun()
+
+        st.markdown("<hr style='border-color:#0d2137;margin:12px 0;'>", unsafe_allow_html=True)
+
+        # ── chat history ─────────────────────────────────────────────────────
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
-        if prompt := st.chat_input("Ask about malware families, injection techniques, CVEs, TTPs..."):
+
+        if prompt := st.chat_input("Ask about this analysis or any cybersecurity topic..."):
             st.session_state.messages.append({"role":"user","content":prompt})
             with st.chat_message("user"): st.markdown(prompt)
             with st.chat_message("assistant"):
                 with st.spinner(""):
-                    response = st.session_state.app.get_chat_response(prompt)
+                    response = st.session_state.app.get_chat_response(prompt, analysis_context)
                     st.markdown(response)
                     st.session_state.messages.append({"role":"assistant","content":response})
 
