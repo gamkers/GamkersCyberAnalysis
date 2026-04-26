@@ -138,7 +138,7 @@ class SecurityAnalysisApp:
     def __init__(self, groq_api_key: str):
         self.chat_model = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name="qwen-qwq-32b",
+            model_name="qwen/qwen3-32b",
             temperature=0.7,
             max_tokens=None,
         )
